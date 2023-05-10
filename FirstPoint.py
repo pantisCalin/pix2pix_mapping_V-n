@@ -18,7 +18,7 @@ class compute_losses:
     MSSIM = False  # This is huge
 
 
-# Huge losses are recomended to be running alone or at least expect them to take a long time. Depending on your computational possibilities, it may take from several hourst to one day
+# Huge losses are recomended to be running alone or at least expect them to take a long time. Depending on your computational possibilities, it may take from several hours to one day
 
 
 for i in range(100):
@@ -206,11 +206,11 @@ def Generator():
     ]
 
     up_stack = [
-        upsample(128, 4),  # (batch_size, 2, 2, 256)
-        upsample(128, 4),  # (batch_size, 4, 4, 256)
-        upsample(64, 4),  # (batch_size, 8, 8, 128)
-        upsample(32, 4),  # (batch_size, 16, 16, 64)
-        upsample(16, 4),  # (batch_size, 32, 32, 32)
+        upsample(128, 4),  # (batch_size, 2, 2, 128)
+        upsample(128, 4),  # (batch_size, 4, 4, 128)
+        upsample(64, 4),  # (batch_size, 8, 8, 64)
+        upsample(32, 4),  # (batch_size, 16, 16, 32)
+        upsample(16, 4),  # (batch_size, 32, 32, 16)
     ]
 
     initializer = tf.random_normal_initializer(0.0, 0.02)
@@ -221,7 +221,7 @@ def Generator():
         padding="same",
         kernel_initializer=initializer,
         activation="tanh",
-    )  # (batch_size, 256, 256, 3)
+    )  # (batch_size, 64, 64, 1)
 
     x = inputs
     skips = []
@@ -260,28 +260,28 @@ def Discriminator():
     inp = tf.keras.layers.Input(shape=[64, 64, 1], name="input_image")
     tar = tf.keras.layers.Input(shape=[64, 64, 1], name="target_image")
 
-    x = tf.keras.layers.concatenate([inp, tar])  # (batch_size, 256, 256, channels*2)
+    x = tf.keras.layers.concatenate([inp, tar])  # (batch_size, 64, 64, cannels*2)
 
     down1 = downsample(16, 4, False)(x)  # (batch_size, 32, 32, 16)
     down2 = downsample(32, 4)(down1)  # (batch_size, 16, 16, 32)
     down3 = downsample(64, 4)(down2)  # (batch_size, 8, 8, 64)
 
-    zero_pad1 = tf.keras.layers.ZeroPadding2D()(down3)  # (batch_size, 34, 34, 256)
+    zero_pad1 = tf.keras.layers.ZeroPadding2D()(down3)  # (batch_size, 10, 10, 64)
     conv = tf.keras.layers.Conv2D(
         128, 4, strides=1, kernel_initializer=initializer, use_bias=False
     )(
         zero_pad1
-    )  # (batch_size, 31, 31, 512)
+    )  # (batch_size, 7, 7, 128)
 
     batchnorm1 = tf.keras.layers.BatchNormalization()(conv)
 
     leaky_relu = tf.keras.layers.LeakyReLU()(batchnorm1)
 
-    zero_pad2 = tf.keras.layers.ZeroPadding2D()(leaky_relu)  # (batch_size, 33, 33, 512)
+    zero_pad2 = tf.keras.layers.ZeroPadding2D()(leaky_relu)  # (batch_size, 9, 9, 128)
 
     last = tf.keras.layers.Conv2D(1, 4, strides=1, kernel_initializer=initializer)(
         zero_pad2
-    )  # (batch_size, 30, 30, 1)
+    )  # (batch_size, 6, 6, 1)
 
     return tf.keras.Model(inputs=[inp, tar], outputs=last)
 
@@ -445,7 +445,7 @@ def ssimLoss(predicted, output_image):
 
 
 WS = 8  # Window Size
-STR = 4  # Stride
+STR = 1  # Stride
 
 
 # Computing MSSIM
